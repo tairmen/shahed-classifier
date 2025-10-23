@@ -1,0 +1,98 @@
+{
+  "calibration_data": {
+    "description": "Калибровочные данные для определения расстояния по децибелам",
+    "reference_sound": "Звук (любой тип - голос, стук, музыка, шум)",
+    "measurement_conditions": "Тихая комната, отсутствие эха",
+    "last_updated": "2025-10-23",
+    
+    "distance_db_mapping": {
+      "0.3": {"db": 70, "description": "Очень близко - громкий звук"},
+      "0.5": {"db": 65, "description": "Близко - средний звук"},
+      "1.0": {"db": 60, "description": "Рядом - обычный звук"},
+      "1.5": {"db": 55, "description": "Близко - тихий звук"},
+      "2.0": {"db": 50, "description": "Средне - звук на расстоянии"},
+      "3.0": {"db": 45, "description": "Далеко - приглушенный звук"},
+      "4.0": {"db": 40, "description": "Далеко - слабый звук"},
+      "5.0": {"db": 35, "description": "Очень далеко - едва слышный звук"},
+      "7.0": {"db": 30, "description": "Крайне далеко - отдаленный звук"},
+      "10.0": {"db": 25, "description": "На пределе слышимости"}
+    },
+    
+    "sound_types": {
+      "speech": {
+        "name": "Речь/Голос",
+        "base_db": 60,
+        "distance_factor": 1.0,
+        "description": "Человеческая речь, голос"
+      },
+      "music": {
+        "name": "Музыка",
+        "base_db": 65,
+        "distance_factor": 1.2,
+        "description": "Музыкальные инструменты, мелодии"
+      },
+      "impact": {
+        "name": "Удары/Стуки",
+        "base_db": 70,
+        "distance_factor": 1.5,
+        "description": "Стуки, удары, хлопки"
+      },
+      "mechanical": {
+        "name": "Механические звуки",
+        "base_db": 65,
+        "distance_factor": 1.3,
+        "description": "Машины, механизмы, техника"
+      },
+      "nature": {
+        "name": "Природные звуки",
+        "base_db": 55,
+        "distance_factor": 0.9,
+        "description": "Шум ветра, воды, животных"
+      },
+      "electronic": {
+        "name": "Электронные звуки",
+        "base_db": 65,
+        "distance_factor": 1.1,
+        "description": "Сигналы, звонки, уведомления"
+      }
+    },
+    
+    "environment_factors": {
+      "indoor": {
+        "echo_factor": 0.9,
+        "absorption_factor": 1.1,
+        "description": "Закрытое помещение"
+      },
+      "outdoor": {
+        "echo_factor": 1.0,
+        "absorption_factor": 0.8,
+        "description": "Открытое пространство"
+      },
+      "noisy": {
+        "echo_factor": 1.2,
+        "absorption_factor": 1.3,
+        "description": "Шумная обстановка"
+      }
+    },
+    
+    "confidence_levels": {
+      "high": {"min_volume": 0.05, "accuracy": "±0.5м"},
+      "medium": {"min_volume": 0.02, "accuracy": "±1.0м"},
+      "low": {"min_volume": 0.01, "accuracy": "±2.0м"},
+      "very_low": {"min_volume": 0.005, "accuracy": "±5.0м"}
+    }
+  },
+  
+  "formulas": {
+    "distance_calculation": "distance = 10^((reference_db - current_db) / 20) * reference_distance",
+    "db_to_distance": "d = d0 * 10^((db0 - db) / 20)",
+    "inverse_square_law": "I2 = I1 * (d1/d2)^2"
+  },
+  
+  "notes": {
+    "1": "Формула основана на законе обратных квадратов для звука",
+    "2": "Каждые 6 дБ соответствуют удвоению/половине расстояния",
+    "3": "Калибровка может потребовать настройки под конкретные условия",
+    "4": "Точность зависит от типа микрофона и окружающей среды"
+  }
+}
