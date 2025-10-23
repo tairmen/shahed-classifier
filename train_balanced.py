@@ -8,8 +8,30 @@ from sklearn.utils.class_weight import compute_class_weight
 DATA_DIR = "data"
 MODEL_PATH = "model/my_sound_model.h5"
 
-yamnet_model_handle = "https://tfhub.dev/google/yamnet/1"
-yamnet_model = hub.load(yamnet_model_handle)
+# Пытаемся загрузить локальную YAMNet модель, если недоступна - загружаем из интернета
+def load_yamnet_model():
+    yamnet_path = './yamnet_local'
+    
+    if os.path.exists(yamnet_path):
+        print("🔄 Загружаем YAMNet локально...")
+        try:
+            yamnet_model = tf.saved_model.load(yamnet_path)
+            print("✅ YAMNet загружен локально")
+            return yamnet_model
+        except Exception as e:
+            print(f"⚠️ Ошибка загрузки локальной модели: {e}")
+    
+    print("🔄 Загружаем YAMNet из интернета...")
+    try:
+        yamnet_model_handle = "https://www.kaggle.com/models/google/yamnet/frameworks/TensorFlow2/variations/yamnet/versions/1"
+        yamnet_model = hub.load(yamnet_model_handle)
+        print("✅ YAMNet загружен из интернета")
+        return yamnet_model
+    except Exception as e:
+        print(f"❌ Ошибка загрузки YAMNet: {e}")
+        raise e
+
+yamnet_model = load_yamnet_model()
 
 def load_wav_16k_mono(filename):
     file_contents = tf.io.read_file(filename)
@@ -49,7 +71,22 @@ def augment_audio_embedding(embedding, num_augmentations=5):
 
 # Загружаем данные
 X, y = [], []
+
+# Проверяем существование папки с данными
+if not os.path.exists(DATA_DIR):
+    print(f"❌ Папка {DATA_DIR} не найдена!")
+    print("📁 Создайте папки data/positive и data/negative с WAV файлами")
+    exit(1)
+
 class_names = sorted(os.listdir(DATA_DIR))
+
+# Проверяем наличие классов
+if len(class_names) < 2:
+    print(f"❌ Найдено только {len(class_names)} класса(ов) в {DATA_DIR}")
+    print("📁 Нужны папки 'positive' и 'negative' с WAV файлами")
+    exit(1)
+
+print(f"📂 Найдены классы: {class_names}")
 
 # Сначала загружаем все данные
 all_embeddings = {class_name: [] for class_name in class_names}
@@ -58,19 +95,42 @@ for label_idx, class_name in enumerate(class_names):
     folder = os.path.join(DATA_DIR, class_name)
     print(f"📂 Загружаем {class_name}...")
     
-    for file in os.listdir(folder):
-        if file.endswith(".wav"):
-            path = os.path.join(folder, file)
+    if not os.path.isdir(folder):
+        print(f"⚠️ {folder} не является папкой, пропускаем...")
+        continue
+    
+    wav_files = [f for f in os.listdir(folder) if f.endswith('.wav')]
+    print(f"   Найдено {len(wav_files)} WAV файлов")
+    
+    if len(wav_files) == 0:
+        print(f"⚠️ В папке {class_name} нет WAV файлов!")
+        continue
+    
+    for file in wav_files:
+        path = os.path.join(folder, file)
+        try:
             emb = extract_embedding(path)
             all_embeddings[class_name].append(emb.numpy())
+        except Exception as e:
+            print(f"⚠️ Ошибка обработки {file}: {e}")
+            continue
 
 # Подсчитываем статистику
+if 'negative' not in all_embeddings or 'positive' not in all_embeddings:
+    print("❌ Не найдены папки 'positive' и 'negative'!")
+    print("📁 Создайте папки data/positive и data/negative с WAV файлами")
+    exit(1)
+
 neg_count = len(all_embeddings['negative'])
 pos_count = len(all_embeddings['positive'])
 
 print(f"📊 Исходные данные:")
 print(f"  negative: {neg_count} файлов")
 print(f"  positive: {pos_count} файлов")
+
+if neg_count == 0 or pos_count == 0:
+    print("❌ Один из классов пустой! Нужны WAV файлы в обеих папках.")
+    exit(1)
 
 # Аугментируем positive класс для баланса
 target_count = min(neg_count, 500)  # Ограничиваем до разумного размера
