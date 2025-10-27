@@ -52,7 +52,7 @@ fullscreen = 0
 
 # (list) Включить дополнительные файлы/папки
 # Формат: source:destination
-source.include_patterns = model/*.h5,distance_calibration.json,data/positive/*.wav
+source.include_patterns = model/*.tflite,model/*.h5,distance_calibration.json
 
 # (str) Главный файл приложения
 # Buildozer автоматически переименует android_sound_detector.py в main.py при сборке

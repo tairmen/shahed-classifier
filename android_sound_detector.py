@@ -127,16 +127,52 @@ class SoundDetectorWidget(BoxLayout):
     def load_model(self):
         """Загрузка AI модели"""
         try:
-            model_path = 'model/my_sound_model.h5'
-            if os.path.exists(model_path):
-                self.classifier = tf.keras.models.load_model(model_path, compile=False)
-                self.model_loaded = True
-                print("✅ Модель загружена")
-            else:
-                print("⚠️ Модель не найдена")
+            # Для Android ищем модель в разных местах
+            possible_paths = [
+                'model/my_sound_model.tflite',  # TFLite версия (приоритет)
+                'model/my_sound_model.h5',       # H5 версия
+                '/data/data/org.soundai.sounddetector/files/app/model/my_sound_model.tflite',  # Android path
+                '/data/data/org.soundai.sounddetector/files/app/model/my_sound_model.h5',
+            ]
+            
+            model_path = None
+            for path in possible_paths:
+                if os.path.exists(path):
+                    model_path = path
+                    print(f"✅ Найдена модель: {path}")
+                    break
+            
+            if model_path is None:
+                print("⚠️ Модель не найдена. Проверенные пути:")
+                for path in possible_paths:
+                    print(f"   ❌ {path}")
                 self.model_loaded = False
+                return
+            
+            # Загрузка модели
+            if model_path.endswith('.tflite'):
+                # TensorFlow Lite модель
+                try:
+                    import tensorflow as tf
+                    self.interpreter = tf.lite.Interpreter(model_path=model_path)
+                    self.interpreter.allocate_tensors()
+                    self.model_loaded = True
+                    print("✅ TFLite модель загружена")
+                except Exception as e:
+                    print(f"⚠️ Ошибка загрузки TFLite: {e}")
+                    self.model_loaded = False
+            else:
+                # H5 модель (для тестирования на ПК)
+                try:
+                    self.classifier = tf.keras.models.load_model(model_path, compile=False)
+                    self.model_loaded = True
+                    print("✅ H5 модель загружена")
+                except Exception as e:
+                    print(f"⚠️ Ошибка загрузки H5: {e}")
+                    self.model_loaded = False
+                    
         except Exception as e:
-            print(f"⚠️ Ошибка загрузки модели: {e}")
+            print(f"⚠️ Критическая ошибка загрузки модели: {e}")
             self.model_loaded = False
     
     def build_ui(self):
@@ -228,10 +264,14 @@ class SoundDetectorWidget(BoxLayout):
         self.add_widget(button_layout)
         
         # Информация внизу
+        # Показываем текущую директорию для отладки
+        current_dir = os.getcwd()
+        model_status = "✅ Загружена" if self.model_loaded else "❌ Не найдена"
+        
         info_text = Label(
-            text=f'AI модель: {"✅ Загружена" if self.model_loaded else "❌ Не найдена"}\nРежим: {"Производительный" if TENSORFLOW_AVAILABLE else "Демо"}',
+            text=f'AI модель: {model_status}\nРежим: {"Производительный" if TENSORFLOW_AVAILABLE else "Демо"}\nDir: {current_dir}',
             size_hint=(1, 0.1),
-            font_size='12sp',
+            font_size='10sp',
             color=(0.7, 0.7, 0.7, 1)
         )
         self.add_widget(info_text)
