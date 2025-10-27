@@ -19,9 +19,9 @@ source.include_exts = py,png,jpg,kv,atlas,json,h5,wav,txt
 version = 1.0.0
 
 # (list) Зависимости приложения
-# Убрали sounddevice и scipy - они требуют старый NDK
-# Для Android используем нативный AudioRecord API
-requirements = python3,kivy==2.2.1,numpy==1.24.3,android,jnius,pyjnius
+# Минимальные зависимости для избежания 404 ошибок
+# Используем последние стабильные версии
+requirements = python3,kivy,numpy,android,pyjnius
 
 # (list) Разрешения приложения
 android.permissions = RECORD_AUDIO,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE,INTERNET
